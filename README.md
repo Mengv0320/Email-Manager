@@ -158,6 +158,10 @@ This project is for learning and communication purposes only. The original autho
 
 - **Email**: [Open an Issue](https://github.com/Mengv0320/Email-Manager/issues)
 
-## 📄 License / 许可证
+## � Contact / 交流
+
+本人是个小菜鸡，欢迎大佬们指点！关于技术交流请加入 QQ 群：**1076321843**
+
+## �📄 License / 许可证
 
 This project is licensed under the [MIT License](LICENSE).
