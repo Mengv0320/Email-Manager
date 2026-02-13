@@ -370,20 +370,18 @@ class Sidebar(QWidget):
         if self.is_dark:
             self.group_title.setStyleSheet("""
                 background: transparent;
-                color: #8b949e;
-                font-size: 11px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 2px;
+                color: #6e7681;
+                font-size: 12px;
+                font-weight: 500;
+                letter-spacing: 1px;
             """)
         else:
             self.group_title.setStyleSheet("""
                 background: transparent;
-                color: #6B7280;
-                font-size: 11px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 2px;
+                color: #9CA3AF;
+                font-size: 12px;
+                font-weight: 500;
+                letter-spacing: 1px;
             """)
     
     def _apply_add_btn_style(self):
@@ -392,30 +390,30 @@ class Sidebar(QWidget):
             self.btn_add.setStyleSheet("""
                 QPushButton {
                     color: #8b949e;
-                    background: transparent;
-                    border: 1px solid #30363d;
-                    border-radius: 4px;
-                    padding-bottom: 2px;
+                    background: #21262d;
+                    border: none;
+                    border-radius: 13px;
+                    font-size: 16px;
+                    font-weight: 300;
                 }
                 QPushButton:hover {
                     color: #58a6ff;
-                    border-color: #58a6ff;
-                    background: #1f6feb11;
+                    background: #30363d;
                 }
             """)
         else:
             self.btn_add.setStyleSheet("""
                 QPushButton {
-                    color: #6B7280;
-                    background: transparent;
-                    border: 1px solid #E5E7EB;
-                    border-radius: 4px;
-                    padding-bottom: 2px;
+                    color: #9CA3AF;
+                    background: #F3F4F6;
+                    border: none;
+                    border-radius: 13px;
+                    font-size: 16px;
+                    font-weight: 300;
                 }
                 QPushButton:hover {
                     color: #2563EB;
-                    border-color: #2563EB;
-                    background: #EFF6FF;
+                    background: #E5E7EB;
                 }
             """)
     
@@ -485,21 +483,22 @@ class Sidebar(QWidget):
                     background: transparent;
                     border: none;
                     outline: none;
-                    padding: 4px 12px;
+                    padding: 4px 10px;
                 }
                 QListWidget::item {
-                    height: 36px;
-                    border-radius: 6px;
-                    padding-left: 12px;
-                    margin-bottom: 2px;
+                    height: 38px;
+                    border-radius: 10px;
+                    padding-left: 14px;
+                    margin-bottom: 3px;
                     color: #8b949e;
+                    font-size: 13px;
                 }
                 QListWidget::item:hover {
                     background: #21262d;
                     color: #c9d1d9;
                 }
                 QListWidget::item:selected {
-                    background: #1f6feb33;
+                    background: #1f6feb22;
                     color: #58a6ff;
                 }
             """)
@@ -509,21 +508,22 @@ class Sidebar(QWidget):
                     background: transparent;
                     border: none;
                     outline: none;
-                    padding: 4px 12px;
+                    padding: 4px 10px;
                 }
                 QListWidget::item {
-                    height: 36px;
-                    border-radius: 6px;
-                    padding-left: 12px;
-                    margin-bottom: 2px;
+                    height: 38px;
+                    border-radius: 10px;
+                    padding-left: 14px;
+                    margin-bottom: 3px;
                     color: #4B5563;
+                    font-size: 13px;
                 }
                 QListWidget::item:hover {
                     background: #F3F4F6;
                     color: #111827;
                 }
                 QListWidget::item:selected {
-                    background: #EFF6FF;
+                    background: #EBF5FF;
                     color: #2563EB;
                     font-weight: 600;
                 }

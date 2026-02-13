@@ -29,8 +29,8 @@ TRANSLATIONS = {
         'switch_language': '切换语言',
         
         # 表格列
-        'col_checkbox': '',
-        'col_index': '#',
+        'col_checkbox': '全选',
+        'col_index': '序号',
         'col_email': '邮箱地址',
         'col_password': '密码',
         'col_group': '分组',
@@ -208,8 +208,8 @@ TRANSLATIONS = {
         'switch_language': 'Switch Language',
         
         # Table columns
-        'col_checkbox': '',
-        'col_index': '#',
+        'col_checkbox': 'All',
+        'col_index': 'No.',
         'col_email': 'Email',
         'col_password': 'Password',
         'col_group': 'Group',

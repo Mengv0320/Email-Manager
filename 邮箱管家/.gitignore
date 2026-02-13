@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Database - 包含用户真实邮箱密码数据
+data/
+*.db
+
+# IDE & Editor
+.windsurfrules
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Windsurf / CodeChat
+codechat/
+windsurfchat/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# PyInstaller
+*.spec
+
+# Virtual Environment
+venv/
+.env/

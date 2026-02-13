@@ -13,6 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import ssl
+import certifi
 import requests
 import os
 import base64
@@ -49,10 +50,10 @@ class EmailClient:
     
     def detect_server(self, email_addr):
         domain = email_addr.split('@')[-1].lower()
+        # Outlook 区域域名统一使用 outlook.office365.com
+        if domain.startswith('outlook.') or domain.startswith('hotmail.') or domain.startswith('live.'):
+            return 'outlook.office365.com'
         servers = {
-            'outlook.com': 'outlook.office365.com',
-            'hotmail.com': 'outlook.office365.com',
-            'live.com': 'outlook.office365.com',
             'gmail.com': 'imap.gmail.com',
             'qq.com': 'imap.qq.com',
             '163.com': 'imap.163.com',
@@ -61,7 +62,8 @@ class EmailClient:
     
     def is_outlook(self):
         domain = self.email_addr.split('@')[-1].lower()
-        return domain in ['outlook.com', 'hotmail.com', 'live.com', 'msn.com']
+        # 支持所有 Outlook 区域域名
+        return domain.startswith('outlook.') or domain.startswith('hotmail.') or domain.startswith('live.') or domain == 'msn.com'
     
     def use_graph_api(self):
         """判断是否使用 Graph API"""
@@ -88,7 +90,7 @@ class EmailClient:
         }
         
         try:
-            response = requests.post(token_url, data=data, timeout=30)
+            response = requests.post(token_url, data=data, timeout=30, verify=certifi.where())
             
             if response.status_code == 200:
                 result = response.json()
@@ -135,7 +137,7 @@ class EmailClient:
                     else:
                         url = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=1'
                     
-                    resp = requests.get(url, headers=headers, timeout=10)
+                    resp = requests.get(url, headers=headers, timeout=10, verify=certifi.where())
                     if resp.status_code == 200:
                         return "正常", "Token 有效"
                     else:

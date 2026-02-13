@@ -1,133 +1,163 @@
-# 邮箱管家
+<div align="center">
 
-批量邮箱账号管理工具，支持 OAuth2 认证和普通 IMAP 登录，采用 Microsoft Fluent Design 风格界面。
+# Email Manager (邮箱管家)
 
-## ✨ 功能特性
+**Batch email account management tool with modern Fluent Design UI**
 
-### 账号管理
-- 📥 批量导入/导出邮箱账号
-- 📋 从剪贴板快速导入（支持 Ctrl+Shift+V 快捷键）
-- 🔄 拖拽 TXT 文件直接导入
-- 🗂️ 分组管理（新建、重命名、删除）
-- ✅ 导入时自动去重检测
-- 📝 账号备注功能
+批量邮箱账号管理工具 | 支持 OAuth2 & IMAP | Microsoft Fluent Design 风格
 
-### 邮件功能
-- 📧 邮件查看（收件箱、垃圾邮件、已发送等）
-- ✉️ 写邮件、回复、转发
-- 📎 附件支持
-- 🔍 邮件搜索
-- 📬 批量发送邮件
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
+[![PyQt5](https://img.shields.io/badge/GUI-PyQt5-orange.svg)](https://pypi.org/project/PyQt5/)
 
-### 状态检测
-- 🔍 批量检测账号状态
-- 🏷️ AWS 验证码邮件自动标记
-- 📊 账号统计仪表盘
+</div>
 
-### 界面特性
-- 🌙 明暗主题切换
-- 🌐 中英文双语支持
-- 🖱️ 右键上下文菜单
-- 📱 系统托盘最小化
-- 🎨 现代化 Fluent Design 风格
+---
 
-## 📦 支持的导入格式
+## ✨ Features / 功能特性
 
-```
-邮箱----密码----Client_ID----Refresh_Token
-```
+### Account Management / 账号管理
+- Batch import/export email accounts (批量导入/导出邮箱账号)
+- Clipboard quick import with `Ctrl+Shift+V` (剪贴板快速导入)
+- Drag & drop TXT file import (拖拽 TXT 文件导入)
+- Group management: create, rename, delete (分组管理)
+- Auto deduplication on import (导入自动去重)
+- Account notes/remarks (账号备注)
 
-多账号分隔方式：
-- `$` 分隔：`账号1$账号2$账号3`
-- 换行分隔：每行一个账号
+### Email / 邮件功能
+- View emails: Inbox, Spam, Sent, etc. (收件箱、垃圾邮件、已发送)
+- Compose, reply, forward (写邮件、回复、转发)
+- Attachment support (附件支持)
+- Email search (邮件搜索)
+- Batch send emails (批量发送)
 
-示例：
-```
-user@outlook.com----password----client_id----refresh_token
-user2@outlook.com----pass2----client_id----token2
-```
+### Status Check / 状态检测
+- Batch account status detection (批量检测账号状态)
+- AWS verification email auto-tagging (AWS 验证码邮件自动标记)
+- Account statistics dashboard (账号统计仪表盘)
 
-## 🔐 认证方式
+### UI / 界面
+- Dark / Light theme toggle (明暗主题切换)
+- Chinese / English bilingual (中英文双语)
+- Right-click context menu (右键上下文菜单)
+- System tray minimize (系统托盘最小化)
+- Modern Fluent Design style (现代 Fluent Design 风格)
 
-| 邮箱类型 | 认证方式 | 说明 |
-|---------|---------|------|
-| Outlook/Hotmail | OAuth2 | 自动识别 API 类型（Graph API 或 Outlook REST API） |
-| QQ/163/Gmail | IMAP | 使用授权码作为密码 |
+## 🔐 Authentication / 认证方式
 
-### OAuth2 手动授权
+| Email Provider | Auth Method | Notes |
+|----------------|-------------|-------|
+| Outlook / Hotmail | OAuth2 | Auto-detect Graph API or Outlook REST API |
+| QQ / 163 / Gmail | IMAP | Use app-specific password |
 
-对于没有 Token 的 Outlook 账号，可以使用「手动授权」功能：
-1. 点击侧边栏「OAuth2 授权」按钮
-2. 程序会打开 Edge 浏览器（InPrivate 模式）
-3. 手动完成 Microsoft 登录流程
-4. 程序自动捕获授权码并获取 Token
-5. Token 保存到数据库
+### OAuth2 Manual Authorization
 
-## 🚀 运行方式
+For Outlook accounts without a token:
+1. Click "OAuth2 Authorization" in the sidebar
+2. Edge browser opens in InPrivate mode
+3. Complete Microsoft login manually
+4. App captures the auth code and obtains token automatically
+5. Token is saved to the local database
+
+## 🚀 Quick Start / 快速开始
+
+### Prerequisites / 环境要求
+
+- Python 3.10+
+- Windows OS (recommended)
+
+### Install & Run / 安装运行
 
 ```bash
-# 安装依赖
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Clone the repo
+git clone https://github.com/Mengv0320/Email-Manager.git
+cd Email-Manager/邮箱管家
 
-# 运行
+# Install dependencies
+pip install -r requirements.txt
+
+# Run
 python main.py
 ```
 
-## 📦 打包为 EXE
+### Build EXE / 打包
 
 ```bash
 build.bat
 ```
 
-打包后文件在 `dist/邮箱管家/` 目录。
+Output: `dist/邮箱管家/`
 
-## 💾 数据存储
+## � Import Format / 导入格式
 
-数据库位置：`data/emails.db`（与程序同目录，支持打包后相对路径）
+```
+email----password----client_id----refresh_token
+```
 
-## 📁 项目结构
+- Separator between accounts: newline or `$`
+- `client_id` and `refresh_token` are optional (for OAuth2 accounts only)
+
+Example:
+```
+user@outlook.com----mypassword
+user2@outlook.com----pass2----9e5f94bc-xxxx----refresh_token_here
+```
+
+## 📁 Project Structure / 项目结构
 
 ```
 邮箱管家/
-├── main.py              # 入口文件
+├── main.py              # Entry point / 入口文件
 ├── core/
-│   ├── email_client.py  # 邮件客户端（OAuth2 + IMAP）
-│   ├── oauth2_helper.py # OAuth2 授权（Selenium + Edge）
-│   └── i18n.py          # 国际化支持
+│   ├── email_client.py  # Email client (OAuth2 + IMAP)
+│   ├── oauth2_helper.py # OAuth2 authorization helper
+│   └── i18n.py          # Internationalization (i18n)
 ├── database/
-│   └── db_manager.py    # SQLite 数据库管理
+│   └── db_manager.py    # SQLite database manager
 ├── ui/
-│   ├── main_window.py   # 主窗口
-│   ├── sidebar.py       # 侧边栏
-│   ├── dialogs.py       # 对话框
-│   ├── theme.py         # 主题管理（明暗主题）
-│   └── system_tray.py   # 系统托盘
-├── assets/              # 图标资源
+│   ├── main_window.py   # Main window
+│   ├── sidebar.py       # Sidebar navigation
+│   ├── dialogs.py       # Dialog windows
+│   ├── theme.py         # Theme manager (dark/light)
+│   └── system_tray.py   # System tray
+├── assets/              # Icon resources
 └── data/
-    └── emails.db        # 数据库文件
+    └── emails.db        # Local database (auto-created)
 ```
 
-## ⌨️ 快捷键
+## ⌨️ Keyboard Shortcuts / 快捷键
 
-| 快捷键 | 功能 |
-|-------|------|
-| Ctrl+Shift+V | 从剪贴板导入账号 |
-| 拖拽 TXT 文件 | 快速导入账号 |
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+V` | Import accounts from clipboard |
+| Drag TXT file | Quick import accounts |
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack / 技术栈
 
-- **PyQt5** - GUI 框架
-- **SQLite** - 本地数据库
-- **Microsoft Graph API / Outlook REST API** - Outlook 邮件
-- **IMAP/SMTP** - 普通邮箱协议
-- **Selenium** - OAuth2 授权自动化
+- **PyQt5** - GUI framework
+- **SQLite** - Local database
+- **Microsoft Graph API / Outlook REST API** - Outlook email access
+- **IMAP / SMTP** - Standard email protocols
+- **Selenium** - OAuth2 browser automation
 
-## 📸 截图
+## 📸 Screenshot / 截图
 
-![alt text](image.png)
+![Email Manager Screenshot](screenshot.png)
 
-![alt text](image-1.png)
+## 🤝 Contributing / 贡献
 
-## 📄 许可证
+Contributions are welcome! Feel free to open issues or submit pull requests.
 
-MIT License
+欢迎提交 Issue 和 Pull Request！
+
+## ⚠️ Disclaimer / 免责声明
+
+This project is for learning and communication purposes only. The original author is unknown. If this project infringes on your rights, please contact us for removal.
+
+本项目仅供学习交流使用，原作者不详。如本项目侵犯了您的权益，请联系删除。
+
+- **Email**: [Open an Issue](https://github.com/Mengv0320/Email-Manager/issues)
+
+## 📄 License / 许可证
+
+This project is licensed under the [MIT License](LICENSE).

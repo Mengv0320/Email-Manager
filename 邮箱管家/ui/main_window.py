@@ -70,53 +70,60 @@ class FluentCheckBox(QCheckBox):
     def __init__(self, parent=None, is_dark=False):
         super().__init__(parent)
         self.is_dark = is_dark
-        self.setFixedSize(24, 24)  # 增大容器尺寸确保完整显示
+        self.is_hovered = False
+        self.setFixedSize(20, 20)
+        self.setCursor(Qt.PointingHandCursor)
     
     def set_dark_mode(self, is_dark):
         """设置深色模式"""
         self.is_dark = is_dark
         self.update()
     
+    def enterEvent(self, event):
+        self.is_hovered = True
+        self.update()
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event):
+        self.is_hovered = False
+        self.update()
+        super().leaveEvent(event)
+    
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        # 绘制边框和背景 - 居中显示 (24x24 容器，绘制 16x16)
-        rect = QRect(4, 4, 16, 16)
+        # 绘制区域 - 16x16 居中于 20x20 容器（留出边框空间）
+        rect = QRect(2, 2, 16, 16)
         
         if self.is_dark:
             # 深色主题
-            bg_color = '#0d1117'
+            bg_color = '#21262d' if not self.is_hovered else '#30363d'
             border_color = '#484f58'
-            check_color = '#3fb950'
-            focus_color = '#58a6ff'
+            check_bg = '#238636'
+            check_color = '#FFFFFF'
         else:
-            # 浅色主题
-            bg_color = '#FFFFFF'
-            border_color = '#9CA3AF'  # 加深边框颜色确保清晰
-            check_color = '#2563EB'
-            focus_color = '#2563EB'
+            # 浅色主题 - 简洁自然
+            bg_color = '#FFFFFF' if not self.is_hovered else '#F5F5F7'
+            border_color = '#C0C0C0'
+            check_bg = '#007AFF'
+            check_color = '#FFFFFF'
         
-        # 焦点状态下的边框颜色
-        if self.hasFocus():
-            border_color = focus_color
-            painter.setPen(QPen(QColor(border_color), 1.5))
-        else:
-            painter.setPen(QPen(QColor(border_color), 1.5))  # 固定较粗的边框
-            
-        painter.setBrush(QBrush(QColor(bg_color)))
-        painter.drawRoundedRect(rect, 3, 3)
-        
-        # 如果选中，绘制勾选标记
         if self.isChecked():
-            # 选中状态下填充背景色
-            painter.setBrush(QBrush(QColor(check_color)))
+            # 选中状态 - 填充背景
             painter.setPen(Qt.NoPen)
-            painter.drawRoundedRect(rect, 3, 3)
+            painter.setBrush(QBrush(QColor(check_bg)))
+            painter.drawRoundedRect(rect, 4, 4)
+            
             # 绘制白色勾选
-            painter.setPen(QPen(Qt.white, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.drawLine(7, 12, 10, 15)
-            painter.drawLine(10, 15, 17, 8)
+            painter.setPen(QPen(QColor(check_color), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.drawLine(5, 10, 8, 13)
+            painter.drawLine(8, 13, 14, 6)
+        else:
+            # 未选中状态 - 绘制边框
+            painter.setPen(QPen(QColor(border_color), 2.0))
+            painter.setBrush(QBrush(QColor(bg_color)))
+            painter.drawRoundedRect(rect, 4, 4)
         
         painter.end()
 
@@ -444,11 +451,10 @@ class MainWindow(QMainWindow):
                 QToolTip {{
                     background-color: #FFFFFF;
                     color: #333333;
-                    border: none;
+                    border: 1px solid #E5E5E5;
                     padding: 8px 14px;
                     border-radius: 8px;
                     font-size: 12px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 }}
                 QScrollBar:vertical {{
                     background: transparent;
@@ -558,9 +564,10 @@ class MainWindow(QMainWindow):
         # 排序按钮
         self.btn_sort = FluentButton(tr('sort_by'), 'default', is_dark=is_dark)
         self.btn_sort.clicked.connect(self.show_sort_menu)
-        t_layout.addWidget(self.btn_sort)
         
         t_layout.addStretch()
+        
+        t_layout.addWidget(self.btn_sort)
         
         # 按钮组
         self.btn_import = FluentButton(tr('import_email'), 'default', is_dark=is_dark)
@@ -571,9 +578,9 @@ class MainWindow(QMainWindow):
         self.btn_move.clicked.connect(self.batch_move_group)
         self.btn_send = FluentButton(tr('batch_send'), 'default', is_dark=is_dark)
         self.btn_send.clicked.connect(self.batch_send_email)
-        self.btn_check = FluentButton(tr('batch_check'), 'default', is_dark=is_dark)
+        self.btn_check = FluentButton(tr('batch_check'), 'primary', is_dark=is_dark)
         self.btn_check.clicked.connect(self.batch_check_status)
-        self.btn_delete = FluentButton(tr('batch_delete'), 'default', is_dark=is_dark)
+        self.btn_delete = FluentButton(tr('batch_delete'), 'danger', is_dark=is_dark)
         self.btn_delete.clicked.connect(self.batch_delete)
         
         t_layout.addWidget(self.btn_import)
@@ -637,9 +644,12 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(7, QHeaderView.Fixed)        # AWS
         header.setSectionResizeMode(8, QHeaderView.Interactive)  # 操作
         
-        self.table.setColumnWidth(0, 44)   # 复选框 (增大以适应新尺寸)
-        self.table.setColumnWidth(1, 50)   # 序号
+        self.table.setColumnWidth(0, 65)   # 复选框/全选
+        self.table.setColumnWidth(1, 60)   # 序号
         self.table.setColumnWidth(7, 60)   # AWS
+        
+        # 点击表头第0列实现全选/取消全选
+        header.sectionClicked.connect(self._on_header_clicked)
         
         table_layout.addWidget(self.table)
         
@@ -656,12 +666,40 @@ class MainWindow(QMainWindow):
         
         bottom_layout.addStretch()
         
+        # 状态统计
+        self.status_summary = QLabel('')
+        self._apply_status_summary_style()
+        bottom_layout.addWidget(self.status_summary)
+        
+        # 分隔
+        sep = QLabel('  |  ')
+        sep.setStyleSheet(f"color: {'#30363d' if self.theme_manager.is_dark() else '#D1D1D6'}; font-size: 12px;")
+        bottom_layout.addWidget(sep)
+        self._bottom_sep = sep
+        
         self.page_info = QLabel(tr('total_records', 0))
         self._apply_page_info_style()
         bottom_layout.addWidget(self.page_info)
         
         table_layout.addWidget(self.table_bottom)
         layout.addWidget(self.table_card, 1)
+    
+    def _on_header_clicked(self, section):
+        """点击表头处理 - 第0列全选/取消全选"""
+        if section == 0:
+            # 检查是否全部已选中
+            all_checked = True
+            for row in range(self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item and item.checkState() != Qt.Checked:
+                    all_checked = False
+                    break
+            # 切换状态
+            new_state = Qt.Unchecked if all_checked else Qt.Checked
+            for row in range(self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item:
+                    item.setCheckState(new_state)
     
     def _apply_table_bottom_style(self):
         """应用表格底部样式"""
@@ -687,6 +725,13 @@ class MainWindow(QMainWindow):
             self.drag_hint.setStyleSheet("color: #6e7681; font-size: 12px;")
         else:
             self.drag_hint.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+    
+    def _apply_status_summary_style(self):
+        """应用状态统计样式"""
+        if self.theme_manager.is_dark():
+            self.status_summary.setStyleSheet("color: #8b949e; font-size: 12px;")
+        else:
+            self.status_summary.setStyleSheet("color: #6B7280; font-size: 12px;")
     
     def _apply_page_info_style(self):
         """应用页面信息样式"""
@@ -738,16 +783,12 @@ class MainWindow(QMainWindow):
         for row, acc in enumerate(accounts):
             self.table.setRowHeight(row, 44)
             
-            # 复选框 - 使用自定义样式
-            cb = FluentCheckBox(is_dark=is_dark)
-            cb.setProperty('account_id', acc[0])
-            cb_widget = QWidget()
-            cb_widget.setStyleSheet("background: transparent; border: none;")
-            cb_layout = QHBoxLayout(cb_widget)
-            cb_layout.addWidget(cb)
-            cb_layout.setAlignment(Qt.AlignCenter)
-            cb_layout.setContentsMargins(0, 0, 0, 0)
-            self.table.setCellWidget(row, 0, cb_widget)
+            # 复选框 - 使用原生 QTableWidgetItem
+            check_item = QTableWidgetItem()
+            check_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            check_item.setCheckState(Qt.Unchecked)
+            check_item.setData(Qt.UserRole, acc[0])  # 存储 account_id
+            self.table.setItem(row, 0, check_item)
             
             # 序号
             num_item = QTableWidgetItem(str(row + 1))
@@ -859,7 +900,7 @@ class MainWindow(QMainWindow):
             ops_widget = QWidget()
             ops_widget.setStyleSheet("background: transparent; border: none;")
             ops_layout = QHBoxLayout(ops_widget)
-            ops_layout.setContentsMargins(0, 0, 0, 0)
+            ops_layout.setContentsMargins(0, 0, 0, 8)
             ops_layout.setSpacing(6)
             ops_layout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             
@@ -869,7 +910,11 @@ class MainWindow(QMainWindow):
             btn_view.setCursor(Qt.PointingHandCursor)
             view_color = '#58a6ff' if is_dark else '#0078D4'
             view_bg = 'rgba(88,166,255,0.1)' if is_dark else 'rgba(0,120,212,0.1)'
-            btn_view.setStyleSheet(f"QPushButton{{color:{view_color};background:transparent;border:none;border-radius:4px;font-size:14px;}}QPushButton:hover{{background:{view_bg};}}")
+            tooltip_bg = '#21262d' if is_dark else '#FFFFFF'
+            tooltip_color = '#e6edf3' if is_dark else '#333333'
+            tooltip_border = '#30363d' if is_dark else '#E5E5E5'
+            tooltip_css = f'QToolTip{{background-color:{tooltip_bg};color:{tooltip_color};border:1px solid {tooltip_border};padding:6px 12px;border-radius:6px;font-size:12px;}}'
+            btn_view.setStyleSheet(f"QPushButton{{color:{view_color};background:transparent;border:none;border-radius:4px;font-size:14px;}}QPushButton:hover{{background:{view_bg};}}{tooltip_css}")
             btn_view.setToolTip(tr('view'))
             btn_view.setProperty('account_id', acc[0])
             btn_view.clicked.connect(self.view_emails)
@@ -880,18 +925,19 @@ class MainWindow(QMainWindow):
             btn_del.setCursor(Qt.PointingHandCursor)
             del_color = '#f85149' if is_dark else '#D13438'
             del_bg = 'rgba(248,81,73,0.1)' if is_dark else 'rgba(209,52,56,0.1)'
-            btn_del.setStyleSheet(f"QPushButton{{color:{del_color};background:transparent;border:none;border-radius:4px;font-size:14px;}}QPushButton:hover{{background:{del_bg};}}")
+            btn_del.setStyleSheet(f"QPushButton{{color:{del_color};background:transparent;border:none;border-radius:4px;font-size:14px;}}QPushButton:hover{{background:{del_bg};}}{tooltip_css}")
             btn_del.setToolTip(tr('delete'))
             account_id = acc[0]
             btn_del.clicked.connect(lambda checked, aid=account_id: self.delete_single_account(aid))
 
             # 更多
-            btn_more = QPushButton('⋮')
-            btn_more.setFixedSize(28, 28)
+            btn_more = QPushButton('···')
+            btn_more.setFixedSize(30, 28)
             btn_more.setCursor(Qt.PointingHandCursor)
-            more_color = '#8b949e' if is_dark else '#666'
-            more_hover_bg = '#30363d' if is_dark else '#f0f0f0'
-            btn_more.setStyleSheet(f"QPushButton{{color:{more_color};background:transparent;border:none;border-radius:4px;font-size:16px;font-weight:bold;}}QPushButton:hover{{background:{more_hover_bg};}}")
+            more_color = '#6e7681' if is_dark else '#999999'
+            more_hover_color = '#c9d1d9' if is_dark else '#333333'
+            more_hover_bg = '#30363d' if is_dark else '#E8E8ED'
+            btn_more.setStyleSheet(f"QPushButton{{color:{more_color};background:transparent;border:none;border-radius:14px;font-size:14px;font-weight:bold;letter-spacing:1px;}}QPushButton:hover{{background:{more_hover_bg};color:{more_hover_color};}}{tooltip_css}")
             btn_more.setToolTip('更多操作')
             btn_more.setProperty('row', row)
             btn_more.clicked.connect(self.show_more_menu)
@@ -905,6 +951,23 @@ class MainWindow(QMainWindow):
         current_count = len(accounts)
         self.stats_count.setText(str(current_count))
         self.page_info.setText(tr('total_records', current_count))
+        
+        # 更新状态统计
+        normal_count = sum(1 for acc in accounts if acc[4] == '正常')
+        abnormal_count = sum(1 for acc in accounts if acc[4] in ['异常', '封禁', '失败'])
+        is_dark = self.theme_manager.is_dark()
+        green = '#3fb950' if is_dark else '#34A853'
+        red = '#f85149' if is_dark else '#EA4335'
+        muted = '#8b949e' if is_dark else '#9CA3AF'
+        self.status_summary.setText(
+            f'<span style="color:{green};">● </span>'
+            f'<span style="color:{muted};">正常</span> '
+            f'<span style="color:{green}; font-weight:600;">{normal_count}</span>'
+            f'&nbsp;&nbsp;&nbsp;'
+            f'<span style="color:{red};">● </span>'
+            f'<span style="color:{muted};">异常</span> '
+            f'<span style="color:{red}; font-weight:600;">{abnormal_count}</span>'
+        )
         
         # 调整列宽
         self.adjust_column_widths()
@@ -969,7 +1032,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'oauth_page'):
             self.oauth_page.hide()
         self.settings_page.show()
-        
+       
         # 更新标题
         self.title_label.setText(tr('settings'))
         self.subtitle_label.setText(tr('settings_desc'))
@@ -1254,7 +1317,7 @@ class MainWindow(QMainWindow):
         self.settings_font_combo = QComboBox()
         self.settings_font_combo.addItems(['11', '12', '13', '14', '15', '16', '18', '20'])
         self.settings_font_combo.setFixedSize(120, 32)
-        self.settings_font_combo.setStyleSheet(self.theme_manager.get_theme()['combo'])
+        self.settings_font_combo.setStyleSheet(self.theme_manager.get_theme()['combo_settings'])
         current_font = self.db.get_setting('font_size', '13')
         index = self.settings_font_combo.findText(current_font)
         if index >= 0:
@@ -1279,7 +1342,7 @@ class MainWindow(QMainWindow):
         self.settings_lang_combo.addItem(tr('chinese'), 'zh')
         self.settings_lang_combo.addItem(tr('english'), 'en')
         self.settings_lang_combo.setFixedSize(120, 32)
-        self.settings_lang_combo.setStyleSheet(self.theme_manager.get_theme()['combo'])
+        self.settings_lang_combo.setStyleSheet(self.theme_manager.get_theme()['combo_settings'])
         current_lang = get_language()
         for i in range(self.settings_lang_combo.count()):
             if self.settings_lang_combo.itemData(i) == current_lang:
@@ -1482,8 +1545,8 @@ class MainWindow(QMainWindow):
             self.copyright_label.setStyleSheet(f"color: {self.theme_manager.get_color('text_secondary')}; background: transparent; font-size: 12px;")
         
         # 更新下拉框样式
-        self.settings_font_combo.setStyleSheet(self.theme_manager.get_theme()['combo'])
-        self.settings_lang_combo.setStyleSheet(self.theme_manager.get_theme()['combo'])
+        self.settings_font_combo.setStyleSheet(self.theme_manager.get_theme()['combo_settings'])
+        self.settings_lang_combo.setStyleSheet(self.theme_manager.get_theme()['combo_settings'])
         
         # 更新主题按钮状态
         self.theme_light_btn.setChecked(not is_dark)
@@ -1505,15 +1568,52 @@ class MainWindow(QMainWindow):
     
     def open_oauth2_dialog(self):
         """显示手动授权页面 - 在右侧内容区显示"""
-        self.show_oauth_page()
+        # 检查勾选的账号数量
+        selected_rows = set()
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and item.checkState() == Qt.Checked:
+                selected_rows.add(row)
+        
+        if len(selected_rows) == 0:
+            QMessageBox.warning(self, '提示', '请先勾选一个要授权的账号')
+            return
+        elif len(selected_rows) > 1:
+            QMessageBox.warning(self, '提示', '手动授权一次只能选择一个账号')
+            return
+        
+        # 获取选中账号的邮箱和密码
+        selected_row = list(selected_rows)[0]
+        
+        # 邮箱在第2列的 cellWidget 中（QLabel）
+        selected_email = ''
+        email_widget = self.table.cellWidget(selected_row, 2)
+        if email_widget:
+            email_label = email_widget.findChild(QLabel)
+            if email_label:
+                selected_email = email_label.text()
+        
+        # 密码在第3列的 cellWidget 中，存储在 QLabel 的 property('real_password') 中
+        selected_password = ''
+        pwd_widget = self.table.cellWidget(selected_row, 3)
+        if pwd_widget:
+            pwd_label = pwd_widget.findChild(QLabel)
+            if pwd_label:
+                selected_password = pwd_label.property('real_password') or ''
+        
+        self.show_oauth_page(selected_email, selected_password)
     
-    def show_oauth_page(self):
+    def show_oauth_page(self, email='', password=''):
         """显示手动授权页面"""
         from core.i18n import tr
         
         # 如果页面不存在，创建它
         if not hasattr(self, 'oauth_page'):
             self.create_oauth_page()
+        
+        # 填充邮箱和密码
+        self.oauth_email_input.setText(email)
+        self.oauth_pwd_input.setText(password)
         
         # 隐藏其他页面
         self.toolbar.hide()
@@ -1530,9 +1630,8 @@ class MainWindow(QMainWindow):
         self.subtitle_label.setText('通过浏览器手动登录获取 OAuth2 授权')
     
     def create_oauth_page(self):
-        """创建手动授权页面"""
+        """创建手动授权页面 - 使用系统浏览器"""
         from core.i18n import tr
-        from ui.dialogs import ManualOAuth2Thread
         
         is_dark = self.theme_manager.is_dark()
         self.oauth_page = QWidget()
@@ -1547,18 +1646,64 @@ class MainWindow(QMainWindow):
         
         page_layout = QVBoxLayout(self.oauth_page)
         page_layout.setContentsMargins(32, 32, 32, 32)
-        page_layout.setSpacing(20)
+        page_layout.setSpacing(16)
         
         # 说明区域
-        desc_label = QLabel('点击"开始授权"后，浏览器会打开微软登录页面。\n'
-                           '请手动登录您的 Outlook 账号，登录成功后程序会自动获取授权信息。')
-        desc_label.setStyleSheet(f"color: {self.theme_manager.get_color('text_secondary')}; font-size: 13px; line-height: 1.6;")
+        desc_label = QLabel('授权步骤：\n'
+                           '1. 点击"打开浏览器授权"，在打开的页面中登录微软账号\n'
+                           '2. 登录成功后，页面会跳转到一个无法访问的地址（https://localhost/...\uff09\n'
+                           '3. 复制浏览器地址栏中的完整 URL，粘贴到下方输入框\n'
+                           '4. 点击"获取 Token"完成授权')
+        desc_label.setStyleSheet(f"color: {self.theme_manager.get_color('text_secondary')}; font-size: 13px;")
         desc_label.setWordWrap(True)
         page_layout.addWidget(desc_label)
+        
+        # 账号输入行
+        email_row = QHBoxLayout()
+        email_label = QLabel('邮箱地址:')
+        email_label.setFixedWidth(80)
+        email_label.setStyleSheet(f"color: {self.theme_manager.get_color('text')}; font-size: 14px;")
+        email_row.addWidget(email_label)
+        
+        self.oauth_email_input = QLineEdit()
+        self.oauth_email_input.setPlaceholderText('输入要授权的邮箱地址')
+        self.oauth_email_input.setStyleSheet(self.theme_manager.get_theme()['input'])
+        self.oauth_email_input.setFixedHeight(36)
+        email_row.addWidget(self.oauth_email_input)
+        
+        self.oauth_copy_email_btn = QPushButton('复制')
+        self.oauth_copy_email_btn.setFixedSize(50, 36)
+        self.oauth_copy_email_btn.setCursor(Qt.PointingHandCursor)
+        self.oauth_copy_email_btn.setStyleSheet(self.theme_manager.get_theme()['button_default'])
+        self.oauth_copy_email_btn.clicked.connect(lambda: self._copy_to_clipboard(self.oauth_email_input.text()))
+        email_row.addWidget(self.oauth_copy_email_btn)
+        page_layout.addLayout(email_row)
+        
+        # 密码输入行
+        pwd_row = QHBoxLayout()
+        pwd_label = QLabel('密码:')
+        pwd_label.setFixedWidth(80)
+        pwd_label.setStyleSheet(f"color: {self.theme_manager.get_color('text')}; font-size: 14px;")
+        pwd_row.addWidget(pwd_label)
+        
+        self.oauth_pwd_input = QLineEdit()
+        self.oauth_pwd_input.setPlaceholderText('输入密码（方便登录时复制）')
+        self.oauth_pwd_input.setStyleSheet(self.theme_manager.get_theme()['input'])
+        self.oauth_pwd_input.setFixedHeight(36)
+        pwd_row.addWidget(self.oauth_pwd_input)
+        
+        self.oauth_copy_pwd_btn = QPushButton('复制')
+        self.oauth_copy_pwd_btn.setFixedSize(50, 36)
+        self.oauth_copy_pwd_btn.setCursor(Qt.PointingHandCursor)
+        self.oauth_copy_pwd_btn.setStyleSheet(self.theme_manager.get_theme()['button_default'])
+        self.oauth_copy_pwd_btn.clicked.connect(lambda: self._copy_to_clipboard(self.oauth_pwd_input.text()))
+        pwd_row.addWidget(self.oauth_copy_pwd_btn)
+        page_layout.addLayout(pwd_row)
         
         # 分组选择行
         group_row = QHBoxLayout()
         group_label = QLabel('导入到分组:')
+        group_label.setFixedWidth(80)
         group_label.setStyleSheet(f"color: {self.theme_manager.get_color('text')}; font-size: 14px;")
         group_row.addWidget(group_label)
         
@@ -1571,10 +1716,28 @@ class MainWindow(QMainWindow):
         group_row.addStretch()
         page_layout.addLayout(group_row)
         
-        # 提示
-        tip_label = QLabel('💡 提示：登录完成后请等待页面自动跳转，不要手动关闭浏览器')
-        tip_label.setStyleSheet("color: #E67E22; font-size: 12px; padding: 8px 0;")
-        page_layout.addWidget(tip_label)
+        page_layout.addSpacing(8)
+        
+        # 打开浏览器按钮
+        self.oauth_btn_open = FluentButton('🌐 打开浏览器授权', 'primary', is_dark=is_dark)
+        self.oauth_btn_open.clicked.connect(self._open_oauth_browser)
+        page_layout.addWidget(self.oauth_btn_open)
+        
+        # URL 输入区域
+        url_label = QLabel('粘贴重定向后的 URL：')
+        url_label.setStyleSheet(f"color: {self.theme_manager.get_color('text')}; font-size: 14px; margin-top: 12px;")
+        page_layout.addWidget(url_label)
+        
+        self.oauth_url_input = QLineEdit()
+        self.oauth_url_input.setPlaceholderText('https://localhost/?code=...')
+        self.oauth_url_input.setStyleSheet(self.theme_manager.get_theme()['input'])
+        self.oauth_url_input.setFixedHeight(38)
+        page_layout.addWidget(self.oauth_url_input)
+        
+        # 获取 Token 按钮
+        self.oauth_btn_get_token = FluentButton('获取 Token', 'success', is_dark=is_dark)
+        self.oauth_btn_get_token.clicked.connect(self._get_oauth_token)
+        page_layout.addWidget(self.oauth_btn_get_token)
         
         # 进度状态
         self.oauth_progress_label = QLabel('准备就绪')
@@ -1588,7 +1751,7 @@ class MainWindow(QMainWindow):
         
         self.oauth_result_text = QTextEdit()
         self.oauth_result_text.setReadOnly(True)
-        self.oauth_result_text.setMaximumHeight(200)
+        self.oauth_result_text.setMaximumHeight(150)
         if is_dark:
             self.oauth_result_text.setStyleSheet("""
                 QTextEdit {
@@ -1615,78 +1778,128 @@ class MainWindow(QMainWindow):
             """)
         page_layout.addWidget(self.oauth_result_text)
         
-        # 按钮区域
-        btn_row = QHBoxLayout()
-        
-        self.oauth_btn_start = FluentButton('开始授权', 'primary', is_dark=is_dark)
-        self.oauth_btn_start.clicked.connect(self._start_oauth)
-        btn_row.addWidget(self.oauth_btn_start)
-        
-        self.oauth_btn_stop = FluentButton('停止', 'default', is_dark=is_dark)
-        self.oauth_btn_stop.clicked.connect(self._stop_oauth)
-        self.oauth_btn_stop.setEnabled(False)
-        btn_row.addWidget(self.oauth_btn_stop)
-        
-        btn_row.addStretch()
-        page_layout.addLayout(btn_row)
-        
         page_layout.addStretch()
         
         # 初始化状态
-        self.oauth_is_processing = False
-        self.oauth_thread = None
         self.oauth_success_count = 0
         
         self.oauth_page.hide()
     
-    def _start_oauth(self):
-        """开始手动授权"""
-        from ui.dialogs import ManualOAuth2Thread
+    def _copy_to_clipboard(self, text):
+        """复制文本到剪贴板"""
+        if text:
+            from PyQt5.QtWidgets import QApplication
+            QApplication.clipboard().setText(text)
+            self.oauth_progress_label.setText('已复制到剪贴板')
+    
+    def _open_oauth_browser(self):
+        """打开浏览器进行授权"""
+        from core.oauth2_helper import SeleniumOAuth2
         
-        if self.oauth_is_processing:
+        email = self.oauth_email_input.text().strip()
+        oauth = SeleniumOAuth2()
+        oauth.open_browser(email)  # 传入邮箱作为登录提示
+        self.oauth_progress_label.setText('已打开浏览器，请登录后复制重定向 URL')
+        self.oauth_result_text.append(f'🌐 已打开浏览器，请登录 {email or "账号"}...')
+    
+    def _get_oauth_token(self):
+        """从 URL 中获取 Token"""
+        from core.oauth2_helper import SeleniumOAuth2
+        
+        url = self.oauth_url_input.text().strip()
+        if not url:
+            self.oauth_progress_label.setText('请先粘贴 URL')
             return
         
-        self.oauth_is_processing = True
-        self.oauth_btn_start.setEnabled(False)
-        self.oauth_btn_stop.setEnabled(True)
+        if 'code=' not in url:
+            self.oauth_progress_label.setText('URL 中没有授权码')
+            self.oauth_result_text.append('❌ URL 格式错误，请确保复制的是完整的重定向 URL')
+            return
         
-        self.oauth_progress_label.setText('正在打开浏览器...')
+        self.oauth_progress_label.setText('正在获取 Token...')
         
-        group = self.oauth_group_combo.currentText()
-        self.oauth_thread = ManualOAuth2Thread(self.db, group)
-        self.oauth_thread.progress.connect(self._on_oauth_progress)
-        self.oauth_thread.finished_signal.connect(self._on_oauth_finished)
-        self.oauth_thread.start()
-    
-    def _stop_oauth(self):
-        """停止授权"""
-        if self.oauth_thread:
-            self.oauth_thread.stop()
-        self.oauth_is_processing = False
-        self.oauth_btn_start.setEnabled(True)
-        self.oauth_btn_stop.setEnabled(False)
-        self.oauth_progress_label.setText('已停止')
-    
-    def _on_oauth_progress(self, message):
-        """授权进度更新"""
-        self.oauth_progress_label.setText(message)
-    
-    def _on_oauth_finished(self, email, client_id, refresh_token, error):
-        """授权完成"""
-        self.oauth_is_processing = False
-        self.oauth_btn_start.setEnabled(True)
-        self.oauth_btn_stop.setEnabled(False)
+        oauth = SeleniumOAuth2()
+        client_id, refresh_token, error = oauth.exchange_code_for_token(url)
         
         if error:
-            self.oauth_progress_label.setText('授权失败')
-            self.oauth_result_text.append(f'❌ 失败: {error}')
+            self.oauth_progress_label.setText('获取失败')
+            self.oauth_result_text.append(f'❌ {error}')
         else:
-            self.oauth_progress_label.setText('授权成功!')
-            self.oauth_result_text.append(f'✅ {email} - 授权成功，已添加到数据库')
-            self.oauth_success_count += 1
-            # 刷新账号列表
-            self.load_accounts()
-            self.sidebar.load_groups()
+            # 添加到数据库
+            group = self.oauth_group_combo.currentText()
+            password = self.oauth_pwd_input.text().strip()
+            input_email = self.oauth_email_input.text().strip()
+            
+            # 从 token 中获取邮箱地址（需要调用 API）
+            api_email = self._get_email_from_token(client_id, refresh_token)
+            email = api_email or input_email  # 优先使用 API 获取的邮箱
+            
+            if email:
+                # 检查账号是否已存在
+                existing = self.db.get_account_by_email(email)
+                if existing:
+                    # 更新现有账号的 OAuth 凭据
+                    self.db.update_account_oauth(existing[0], client_id, refresh_token)
+                    # 更新状态为正常
+                    self.db.update_account_status(existing[0], '正常')
+                    self.oauth_progress_label.setText('授权成功!')
+                    self.oauth_result_text.append(f'✅ {email} - 授权成功，已更新 OAuth2 凭据')
+                    self.oauth_success_count += 1
+                    # 清空输入框
+                    self.oauth_url_input.clear()
+                    self.oauth_email_input.clear()
+                    self.oauth_pwd_input.clear()
+                    self.load_accounts()
+                    self.sidebar.load_groups()
+                else:
+                    # 添加新账号
+                    success, msg = self.db.add_account(
+                        email=email,
+                        password=password,
+                        group=group,
+                        client_id=client_id,
+                        refresh_token=refresh_token
+                    )
+                    if success:
+                        self.oauth_progress_label.setText('授权成功!')
+                        self.oauth_result_text.append(f'✅ {email} - 授权成功，已添加到数据库')
+                        self.oauth_success_count += 1
+                        # 清空输入框
+                        self.oauth_url_input.clear()
+                        self.oauth_email_input.clear()
+                        self.oauth_pwd_input.clear()
+                        self.load_accounts()
+                        self.sidebar.load_groups()
+                    else:
+                        self.oauth_result_text.append(f'⚠️ {email} - {msg}')
+            else:
+                self.oauth_progress_label.setText('获取邮箱地址失败')
+                self.oauth_result_text.append('❌ 无法获取邮箱地址，请在上方输入邮箱地址')
+    
+    def _get_email_from_token(self, client_id, refresh_token):
+        """使用 token 获取邮箱地址"""
+        import requests
+        try:
+            # 先获取 access_token
+            token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+            data = {
+                'client_id': client_id,
+                'refresh_token': refresh_token,
+                'grant_type': 'refresh_token',
+            }
+            resp = requests.post(token_url, data=data, timeout=30)
+            if resp.status_code != 200:
+                return None
+            access_token = resp.json().get('access_token')
+            
+            # 获取用户信息
+            headers = {'Authorization': f'Bearer {access_token}'}
+            user_resp = requests.get('https://graph.microsoft.com/v1.0/me', headers=headers, timeout=10)
+            if user_resp.status_code == 200:
+                return user_resp.json().get('mail') or user_resp.json().get('userPrincipalName')
+        except:
+            pass
+        return None
     
     def _update_oauth_page_theme(self):
         """更新手动授权页面主题"""
@@ -1893,11 +2106,9 @@ class MainWindow(QMainWindow):
     def get_selected_accounts(self):
         selected = []
         for row in range(self.table.rowCount()):
-            widget = self.table.cellWidget(row, 0)
-            if widget:
-                cb = widget.findChild(QCheckBox)
-                if cb and cb.isChecked():
-                    selected.append(cb.property('account_id'))
+            item = self.table.item(row, 0)
+            if item and item.checkState() == Qt.Checked:
+                selected.append(item.data(Qt.UserRole))
         return selected
 
     def batch_check_status(self):
@@ -1939,29 +2150,27 @@ class MainWindow(QMainWindow):
         # 1. 更新表格（如果存在）
         if hasattr(self, 'table'):
             for row in range(self.table.rowCount()):
-                widget = self.table.cellWidget(row, 0)
-                if widget:
-                    cb = widget.findChild(QCheckBox)
-                    if cb and cb.property('account_id') == account_id:
-                        # 更新状态徽章 (列5)
-                        status_widget = self.table.cellWidget(row, 5)
-                        if status_widget:
-                            # 重新创建 badge (或者如有引用直接更新，这里简化直接重新load_accounts的逻辑太重，
-                            # 所以我们只更新文字和样式，但之前使用的是 setCellWidget 里的 QLabel)
-                            # 查找 QLabel
-                            badge = status_widget.findChild(QLabel)
-                            if badge:
-                                badge.setText(status)
-                                # 更新样式
-                                badge_style_key = 'badge_info'
-                                if status == '正常':
-                                    badge_style_key = 'badge_success'
-                                elif status in ['异常', '封禁', '失败']:
-                                    badge_style_key = 'badge_error'
-                                elif status in ['验证中', '验证']:
-                                    badge_style_key = 'badge_warning'
-                                badge.setStyleSheet(self.theme_manager.get_theme().get(badge_style_key, ''))
-                        break
+                item = self.table.item(row, 0)
+                if item and item.data(Qt.UserRole) == account_id:
+                    # 更新状态徽章 (列5)
+                    status_widget = self.table.cellWidget(row, 5)
+                    if status_widget:
+                        # 重新创建 badge (或者如有引用直接更新，这里简化直接重新load_accounts的逻辑太重，
+                        # 所以我们只更新文字和样式，但之前使用的是 setCellWidget 里的 QLabel)
+                        # 查找 QLabel
+                        badge = status_widget.findChild(QLabel)
+                        if badge:
+                            badge.setText(status)
+                            # 更新样式
+                            badge_style_key = 'badge_info'
+                            if status == '正常':
+                                badge_style_key = 'badge_success'
+                            elif status in ['异常', '封禁', '失败']:
+                                badge_style_key = 'badge_error'
+                            elif status in ['验证中', '验证']:
+                                badge_style_key = 'badge_warning'
+                            badge.setStyleSheet(self.theme_manager.get_theme().get(badge_style_key, ''))
+                    break
         
         # 2. 如果仪表盘可见，实时更新仪表盘数据
         if hasattr(self, 'dashboard_page') and self.dashboard_page.isVisible():
@@ -2016,18 +2225,16 @@ class MainWindow(QMainWindow):
         muted_color = '#6e7681' if is_dark else '#999999'
         
         for row in range(self.table.rowCount()):
-            widget = self.table.cellWidget(row, 0)
-            if widget:
-                cb = widget.findChild(QCheckBox)
-                if cb and cb.property('account_id') == account_id:
-                    aws_item = self.table.item(row, 7)
-                    if aws_item:
-                        aws_item.setText(tr('has_aws_code') if has_aws else tr('no_aws_code'))
-                        if has_aws:
-                            aws_item.setForeground(QColor(success_color))
-                        else:
-                            aws_item.setForeground(QColor(muted_color))
-                    break
+            item = self.table.item(row, 0)
+            if item and item.data(Qt.UserRole) == account_id:
+                aws_item = self.table.item(row, 7)
+                if aws_item:
+                    aws_item.setText(tr('has_aws_code') if has_aws else tr('no_aws_code'))
+                    if has_aws:
+                        aws_item.setForeground(QColor(success_color))
+                    else:
+                        aws_item.setForeground(QColor(muted_color))
+                break
 
     def on_check_finished(self):
         self.btn_check.setEnabled(True)
@@ -2099,13 +2306,8 @@ class MainWindow(QMainWindow):
         is_dark = self.theme_manager.is_dark()
         menu.setStyleSheet(MENU_STYLE_DARK if is_dark else MENU_STYLE_LIGHT)
         
-        # 添加阴影效果
-        shadow = QGraphicsDropShadowEffect(menu)
-        shadow.setBlurRadius(20)
-        shadow.setColor(QColor(0, 0, 0, 50 if is_dark else 30))
-        shadow.setOffset(0, 4)
-        menu.setGraphicsEffect(shadow)
-        
+        action_detect = menu.addAction('选中检测')
+        menu.addSeparator()
         action_check_this = menu.addAction(tr('check_this_row'))
         action_check_from = menu.addAction(tr('check_from_row'))
         menu.addSeparator()
@@ -2114,7 +2316,10 @@ class MainWindow(QMainWindow):
         
         action = menu.exec_(btn.mapToGlobal(btn.rect().bottomLeft()))
         
-        if action == action_check_this:
+        if action == action_detect:
+            self.check_row(row)
+            self.batch_check_status()
+        elif action == action_check_this:
             self.check_row(row)
         elif action == action_check_from:
             self.check_from_row(row)
@@ -2125,15 +2330,15 @@ class MainWindow(QMainWindow):
     
     def get_row_checkbox(self, row):
         """获取指定行的复选框"""
-        widget = self.table.cellWidget(row, 0)
-        return widget.findChild(QCheckBox) if widget else None
+        return self.table.item(row, 0)
     
     def set_rows_checked(self, rows, checked=True):
         """设置多行的勾选状态"""
+        state = Qt.Checked if checked else Qt.Unchecked
         for row in rows:
-            cb = self.get_row_checkbox(row)
-            if cb:
-                cb.setChecked(checked)
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(state)
     
     def check_row(self, row):
         """勾选指定行"""
@@ -2200,7 +2405,7 @@ class MainWindow(QMainWindow):
     def adjust_column_widths(self):
         """按比例调整列宽 (邮箱:密码:分组:状态:类型:操作)"""
         # 计算可用宽度（减去复选框、序号列、AWS列和滚动条）
-        available = self.table.viewport().width() - 44 - 50 - 60 - 20
+        available = self.table.viewport().width() - 65 - 60 - 60 - 20
         if available <= 0:
             return
         
@@ -2474,7 +2679,7 @@ class MainWindow(QMainWindow):
         cards_widget.setStyleSheet("background: transparent;")
         cards_layout = QHBoxLayout(cards_widget)
         cards_layout.setContentsMargins(0, 0, 0, 0)
-        cards_layout.setSpacing(16)
+        cards_layout.setSpacing(20)
         
         # 获取统计数据
         total = self.db.get_account_count()
@@ -2483,76 +2688,83 @@ class MainWindow(QMainWindow):
         error_count = sum(1 for acc in accounts if acc[4] == '异常')
         unchecked_count = sum(1 for acc in accounts if acc[4] not in ['正常', '异常'])
         
-        # 创建统计卡片
+        # 创建统计卡片 - 移除 emoji，使用颜色块标识
+        # (标题, 数值, 主色, 标签色)
         cards_data = [
-            ('📊', '总账号数', str(total), '#0078D4' if not is_dark else '#58a6ff'),
-            ('✅', '正常账号', str(normal_count), '#107C10' if not is_dark else '#3fb950'),
-            ('⚠️', '异常账号', str(error_count), '#D13438' if not is_dark else '#f85149'),
-            ('❓', '未检测', str(unchecked_count), '#FFB900' if not is_dark else '#d29922'),
+            ('总账号数', str(total), '#007AFF', '#E3F2FD'),
+            ('正常账号', str(normal_count), '#34C759', '#E8F5E9'),
+            ('异常账号', str(error_count), '#FF3B30', '#FFEBEE'),
+            ('未检测', str(unchecked_count), '#FF9500', '#FFF8E1'),
         ]
         
         self.dashboard_stat_labels = []
         
-        for icon, title, value, color in cards_data:
-            card = self._create_stat_card(icon, title, value, color)
+        for title, value, color, bg_color in cards_data:
+            card = self._create_stat_card(title, value, color, bg_color)
             cards_layout.addWidget(card)
             
         cards_layout.addStretch()
         parent_layout.addWidget(cards_widget)
     
-    def _create_stat_card(self, icon, title, value, color):
-        """创建单个统计卡片"""
+    def _create_stat_card(self, title, value, color, bg_color):
+        """创建单个统计卡片 - 现代简约风格"""
         is_dark = self.theme_manager.is_dark()
         
         card = QFrame()
-        card.setFixedSize(160, 100)
+        card.setFixedSize(180, 110)
         
         if is_dark:
-            card.setStyleSheet(f"""
-                QFrame {{
-                    background: #161b22;
-                    border: none;
-                    border-radius: 12px;
-                }}
-            """)
+            # 深色主题
+            card_bg = '#161b22'
+            text_color = '#8b949e'
+            value_color = '#FFFFFF'
+            border_color = '#30363d'
+            # 调整深色模式下的背景色
+            if bg_color == '#E3F2FD': bg_color = 'rgba(56, 139, 253, 0.15)' # 蓝色
+            elif bg_color == '#E8F5E9': bg_color = 'rgba(35, 134, 54, 0.15)' # 绿色
+            elif bg_color == '#FFEBEE': bg_color = 'rgba(218, 54, 51, 0.15)' # 红色
+            elif bg_color == '#FFF8E1': bg_color = 'rgba(158, 106, 3, 0.15)' # 黄色
         else:
-            card.setStyleSheet(f"""
-                QFrame {{
-                    background: #FFFFFF;
-                    border: none;
-                    border-radius: 12px;
-                }}
-            """)
-        
-        # 添加阴影
-        shadow = QGraphicsDropShadowEffect(card)
-        shadow.setBlurRadius(10)
-        shadow.setColor(QColor(0, 0, 0, 20 if not is_dark else 40))
-        shadow.setOffset(0, 2)
-        card.setGraphicsEffect(shadow)
+            # 浅色主题
+            card_bg = '#FFFFFF'
+            text_color = '#6E6E73'
+            value_color = '#1D1D1F'
+            border_color = '#E5E5E5'
+            
+        card.setStyleSheet(f"""
+            QFrame {{
+                background-color: {card_bg};
+                border: 1px solid {border_color};
+                border-radius: 12px;
+            }}
+        """)
         
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(4)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(8)
         
-        # 图标和标题行
-        header = QHBoxLayout()
-        icon_label = QLabel(icon)
-        icon_label.setStyleSheet("font-size: 18px; background: transparent;")
-        header.addWidget(icon_label)
+        # 顶部：标题 + 颜色指示点
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(8)
         
+        # 颜色指示条
+        indicator = QLabel()
+        indicator.setFixedSize(4, 14)
+        indicator.setStyleSheet(f"background-color: {color}; border-radius: 2px;")
+        header_layout.addWidget(indicator)
+        
+        # 标题
         title_label = QLabel(title)
-        title_color = '#8b949e' if is_dark else '#616161'
-        title_label.setStyleSheet(f"font-size: 12px; color: {title_color}; background: transparent;")
-        header.addWidget(title_label)
-        header.addStretch()
-        layout.addLayout(header)
+        title_label.setStyleSheet(f"font-size: 13px; font-weight: 500; color: {text_color}; background: transparent;")
+        header_layout.addWidget(title_label)
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
         
         layout.addStretch()
         
         # 数值
         value_label = QLabel(value)
-        value_label.setStyleSheet(f"font-size: 28px; font-weight: 600; color: {color}; background: transparent;")
+        value_label.setStyleSheet(f"font-size: 32px; font-weight: 600; color: {value_color}; background: transparent; font-family: 'Segoe UI', sans-serif;")
         layout.addWidget(value_label)
         
         # 保存引用以便更新

@@ -7,6 +7,7 @@ import urllib.parse
 import requests
 import secrets
 import time
+import webbrowser
 
 
 # Thunderbird 邮件客户端的 Client ID
@@ -31,26 +32,9 @@ class SeleniumOAuth2:
         self.driver = None
     
     def init_driver(self):
-        """初始化 Edge WebDriver - 使用无痕模式"""
-        try:
-            from selenium import webdriver
-            from selenium.webdriver.edge.options import Options
-            
-            options = Options()
-            options.add_argument('--inprivate')  # 无痕模式
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--window-size=1280,900')
-            options.add_argument('--disable-blink-features=AutomationControlled')
-            options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
-            options.add_experimental_option('useAutomationExtension', False)
-            
-            self.driver = webdriver.Edge(options=options)
-            
-            return True, None
-        except Exception as e:
-            return False, f"初始化浏览器失败: {str(e)}"
+        """初始化 - 使用系统默认浏览器"""
+        # 不需要 Selenium，直接使用系统浏览器
+        return True, None
     
     def close_driver(self):
         """关闭浏览器"""
@@ -61,75 +45,45 @@ class SeleniumOAuth2:
                 pass
             self.driver = None
     
-    def authorize_semi_auto(self, email='', progress_callback=None, timeout=120):
-        """
-        半自动模式 - 打开授权页面，用户手动登录，程序自动获取授权码
-        返回: (client_id, refresh_token, error_msg)
-        """
+    def get_auth_url(self, email=''):
+        """生成授权 URL"""
+        state = secrets.token_urlsafe(16)
+        params = {
+            'client_id': self.client_id,
+            'response_type': 'code',
+            'redirect_uri': REDIRECT_URI,
+            'response_mode': 'query',
+            'scope': ' '.join(SCOPES),
+            'state': state,
+        }
+        if email:
+            params['login_hint'] = email
+        
+        base_url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+        return f"{base_url}?{urllib.parse.urlencode(params)}"
+    
+    def open_browser(self, email=''):
+        """打开系统浏览器进行授权"""
+        auth_url = self.get_auth_url(email)
+        webbrowser.open(auth_url)
+        return auth_url
+    
+    def exchange_code_for_token(self, redirect_url):
+        """从重定向 URL 中提取授权码并换取 token"""
         try:
-            # 生成授权 URL
-            state = secrets.token_urlsafe(16)
-            params = {
-                'client_id': self.client_id,
-                'response_type': 'code',
-                'redirect_uri': REDIRECT_URI,
-                'response_mode': 'query',
-                'scope': ' '.join(SCOPES),
-                'state': state,
-            }
-            if email:
-                params['login_hint'] = email  # 预填邮箱
+            # 从 URL 中提取 code
+            if 'code=' not in redirect_url:
+                return None, None, "无效的 URL，找不到授权码"
             
-            base_url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-            auth_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+            parsed = urllib.parse.urlparse(redirect_url)
+            url_params = urllib.parse.parse_qs(parsed.query)
             
-            if progress_callback:
-                progress_callback("打开授权页面，请手动登录...")
+            if 'code' not in url_params:
+                return None, None, "无效的 URL，找不到授权码"
             
-            self.driver.get(auth_url)
+            auth_code = url_params['code'][0]
             
-            # 等待用户手动完成登录，监控 URL 变化
-            if progress_callback:
-                progress_callback("等待手动登录完成...")
-            
-            auth_code = None
-            start_time = time.time()
-            
-            while (time.time() - start_time) < timeout:
-                try:
-                    current_url = self.driver.current_url
-                    
-                    # 检查是否获取到授权码
-                    if 'code=' in current_url:
-                        parsed = urllib.parse.urlparse(current_url)
-                        url_params = urllib.parse.parse_qs(parsed.query)
-                        if 'code' in url_params:
-                            auth_code = url_params['code'][0]
-                            if progress_callback:
-                                progress_callback("获取到授权码!")
-                            break
-                    
-                    # 检查是否有错误
-                    if 'error=' in current_url:
-                        parsed = urllib.parse.urlparse(current_url)
-                        url_params = urllib.parse.parse_qs(parsed.query)
-                        error_desc = url_params.get('error_description', ['授权失败'])[0]
-                        error_desc = urllib.parse.unquote(error_desc)
-                        return None, None, f"授权失败: {error_desc}"
-                    
-                except Exception:
-                    # 浏览器可能已关闭
-                    return None, None, "浏览器已关闭"
-                
-                time.sleep(1)
-            
-            if not auth_code:
-                return None, None, "授权超时"
-            
-            # 换取 tokens
-            if progress_callback:
-                progress_callback("正在获取 Token...")
-            
+            # 换取 token
             token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
             data = {
                 'client_id': self.client_id,
@@ -152,6 +106,12 @@ class SeleniumOAuth2:
                 error_data = response.json()
                 error = error_data.get('error_description', response.text)
                 return None, None, f"获取 Token 失败: {error}"
-            
         except Exception as e:
             return None, None, f"授权过程出错: {str(e)}"
+    
+    def authorize_semi_auto(self, email='', progress_callback=None, timeout=120):
+        """半自动模式 - 打开授权页面"""
+        if progress_callback:
+            progress_callback("打开浏览器进行授权...")
+        self.open_browser(email)
+        return None, None, "请在浏览器中完成登录，然后复制重定向后的 URL"
